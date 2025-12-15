@@ -18,6 +18,16 @@ const corsOptions = {
   optionsSuccessStatus: 204,
 };
 
+// Connect to MongoDB
+mongoose.connect(config.localDB, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true
+}).then(() => {
+  console.log('MongoDB connected successfully');
+}).catch((err) => {
+  console.error('MongoDB connection error:', err);
+});
+
 app.use(express.static(path.join(__dirname, 'uploads')));
 
 app.use(cors(corsOptions));
