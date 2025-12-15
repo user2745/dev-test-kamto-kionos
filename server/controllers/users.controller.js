@@ -1,16 +1,13 @@
-var users = require('../models/users');
-
+const userService = require('../service/users.service');
 module.exports = {
-  getUserDetails: (req, res) => {
-    users.findOne({ _id: req.params.userId })
-      .populate('city', 'name')
-      .populate('state', 'name')
-      .exec((err, result) => {
-        if (err)
-          res.status(400).send(err);
-        else {
-          res.status(200).send(result);
-        }
-      });
+  getUserDetails: async (req, res) => {
+    try {
+      const result = await userService.getUserDetails(req.params.userId);
+      res.status(result.status).send(result.data? result.data : { message: result.message } );
+    } catch (error) {
+      const status = error.status || 500;
+      const message = error.message || "Internal Server Error";
+      res.status(status).json({ message });      
+    }
   }
 }
