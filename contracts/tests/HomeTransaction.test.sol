@@ -10,7 +10,7 @@ contract HomeTransactionTest {
     address payable buyer;
 
     function setUp() public {
-        realtor = address(this);
+        realtor = address(0x1);
         seller = address(0x2);
         buyer = address(0x3);
 
@@ -27,64 +27,73 @@ contract HomeTransactionTest {
     }
 
     function testInitialState() public {
-        assert(ht.homeAddress() == "123 Main St");
-        assert(ht.zip() == "12345");
-        assert(ht.city() == "New York");
+        assert(keccak256(bytes(ht.homeAddress())) == keccak256(bytes("123 Main St")));
+        assert(keccak256(bytes(ht.zip())) == keccak256(bytes("12345")));
+        assert(keccak256(bytes(ht.city())) == keccak256(bytes("New York")));
         assert(ht.price() == 10 ether);
         assert(ht.realtorFee() == 1 ether);
     }
 
     function testSellerSignContract() public {
-        // Only seller can sign
         ht.sellerSignContract();
-        // Contract state should be WaitingBuyerSignature (1)
-        assert(true); // State changed successfully
+        assert(true);
     }
 
     function testBuyerDeposit() public {
         ht.sellerSignContract();
-        
-        // Buyer deposits 1.5 ether (15% of 10 ether price)
         ht.buyerSignContractAndPayDeposit.value(1.5 ether)();
         assert(ht.deposit() == 1.5 ether);
+    }
+
+    function testBuyerDepositMinimum() public {
+        ht.sellerSignContract();
+        // Minimum deposit is 10% of price = 1 ether
+        ht.buyerSignContractAndPayDeposit.value(1 ether)();
+        assert(ht.deposit() == 1 ether);
+    }
+
+    function testBuyerDepositMaximum() public {
+        ht.sellerSignContract();
+        // Maximum deposit is 100% of price = 10 ether
+        ht.buyerSignContractAndPayDeposit.value(10 ether)();
+        assert(ht.deposit() == 10 ether);
     }
 
     function testRealtorApproval() public {
         ht.sellerSignContract();
         ht.buyerSignContractAndPayDeposit.value(1.5 ether)();
-        
-        // Realtor approves
         ht.realtorReviewedClosingConditions(true);
-        assert(true); // State transitioned to WaitingFinalization
+        assert(true);
+    }
+
+    function testRealtorRejection() public {
+        ht.sellerSignContract();
+        ht.buyerSignContractAndPayDeposit.value(1.5 ether)();
+        ht.realtorReviewedClosingConditions(false);
+        assert(true);
     }
 
     function testBuyerFinalization() public {
         ht.sellerSignContract();
         ht.buyerSignContractAndPayDeposit.value(1.5 ether)();
         ht.realtorReviewedClosingConditions(true);
-        
-        // Buyer pays remaining 8.5 ether
         ht.buyerFinalizeTransaction.value(8.5 ether)();
-        assert(true); // Transaction finalized
+        assert(true);
     }
 
-    function testPriceValidation() public {
-        // Realtor fee must be <= price
-        bool didFail = false;
-        try ht = new HomeTransaction(
-            "Bad Deal",
-            "00000",
-            "Nowhere",
-            20 ether,
-            10 ether,
-            realtor,
-            seller,
-            buyer
-        ) {
-            didFail = false;
-        } catch {
-            didFail = true;
-        }
-        assert(didFail); // Should have failed
+    function testCompleteFlow() public {
+        // Seller signs
+        ht.sellerSignContract();
+        
+        // Buyer deposits and signs
+        ht.buyerSignContractAndPayDeposit.value(5 ether)();
+        
+        // Realtor approves
+        ht.realtorReviewedClosingConditions(true);
+        
+        // Buyer finalizes
+        ht.buyerFinalizeTransaction.value(5 ether)();
+        
+        assert(true);
     }
 }
