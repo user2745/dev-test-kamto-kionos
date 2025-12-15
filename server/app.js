@@ -6,6 +6,7 @@ const cors = require('cors');
 const http = require('http');
 const bodyParser = require('body-parser');
 const config = require('./config/config');
+const { fetchRemoteConfig } = require('./service/config.service');
 require('dotenv').config();
 
 const app = express();
@@ -37,6 +38,7 @@ app.use('/api/email', email);
 
 const PORT = process.env.PORT || 5001;
 
-server.listen(PORT, () => {
+server.listen(PORT, async () => {
+  await fetchRemoteConfig();
   console.log(`Server running on port ${PORT}`);
 });

