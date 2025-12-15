@@ -1,74 +1,60 @@
-const mongoose = require('mongoose');
-var state_model = require('../models/state');
-var city_model = require('../models/city');
-var users = require('../models/users');
+const CommonService = require('../service/common.service');
 
 module.exports = {
-  getStateList: (req, res) => {
-    state_model.find({ is_active: true })
-      .exec((err, data) => {
-        if (err)
-          res.status(400).send(err);
-        res.status(200).send(data);
-      });
+  getStateList: async (req, res) => {
+    try {
+      const states = await CommonService.getStateList();
+      res.status(200).json(states);
+    } catch (error) {
+      res.status(400).json({ message: error.message });
+    }
   },
-  addState: (req, res) => {
-    var state = new state_model();
-    state.name = req.body.name;
-
-    state.save((err) => {
-      if (err)
-        res.send(err);
-      res.json({ message: 'State added successfully' });
-    })
+  addState: async (req, res) => {
+    try {
+      const result = await CommonService.addState(req.body);
+      res.status(200).json({ message: 'State added successfully', data: result });
+    } catch (error) {
+      res.status(400).json({ message: error.message });
+    }
   },
-  getAllCities: (req, res) => {
-    city_model.find({ is_active: true })
-      .populate('state_id', 'name')
-      .exec((err, data) => {
-        if (err)
-          res.status(400).send(err);
-        res.status(200).json(data);
-      });
+  getAllCities: async (req, res) => {
+    try {
+      const cities = await CommonService.getAllCities();
+      res.status(200).json(cities);
+    } catch (error) {
+      res.status(400).json({ message: error.message });
+    }
   },
-  getCityList: (req, res) => {
-    city_model.find({ state_id: req.params.state_id, is_active: true })
-      .populate('state_id', 'name')
-      .exec((err, data) => {
-        if (err)
-          res.status(400).send(err);
-        res.status(200).json(data);
-      });
+  getCityList: async (req, res) => {
+    try {
+      const cities = await CommonService.getCityList(req.params.state_id);
+      res.status(200).json(cities);
+    } catch (error) {
+      res.status(400).json({ message: error.message });
+    }
   },
   addCity: async (req, res) => {
     try {
-      var city = new city_model(req.body);
-      const result = await city.save();
-      console.log({ result });
-      if (result) res.status(200).json({ message: 'City added successfully' });
-      else throw new Error('Something Went Wrong');
-    }
-    catch (err) {
-      res.status(400).json({ message: err.message });
+      const result = await CommonService.addCity(req.body);
+      res.status(200).json({ message: 'City added successfully', data: result });
+    } catch (error) {
+      res.status(400).json({ message: error.message });
     }
   },
-  removeCity: (req, res) => {
-    city_model.remove({ _id: req.params.cityId }, (err, result) => {
-      if (err)
-        res.status(400).send(err);
+  removeCity: async (req, res) => {
+    try {
+      const result = await CommonService.removeCity(req.params.cityId);
       res.status(200).json({ message: 'City removed successfully', data: result });
-    })
+    } catch (error) {
+      res.status(400).json({ message: error.message });
+    }
   },
-  checkemailAvailability: (req, res) => {
-    var email = req.params.email;
-
-    users.find({ email: email }, (err, result) => {
-      if (err)
-        res.status(400).send(err);
-      else if (result.length > 0)
-        res.status(200).json({ response: true });
-      else
-        res.status(200).json({ response: false });
-    });
+  checkemailAvailability: async (req, res) => {
+    try {
+      const isAvailable = await CommonService.checkEmailAvailability(req.params.email);
+      res.status(200).json({ response: !isAvailable });
+    } catch (error) {
+      res.status(400).json({ message: error.message });
+    }
   }
 }
